@@ -220,7 +220,7 @@ def print_logins(secfile, from_date, to_date):
     print(str(s))
 
 if __name__ == '__main__':
-  parser = argparse.ArgumentParser(description='analyse use sessions')
+  parser = argparse.ArgumentParser(description='analyse user sessions')
   parser.add_argument('--evtx',
                       dest='secfile',
                       help='path of the Security.evtx file (default: stdin)',
