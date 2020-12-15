@@ -19,5 +19,5 @@ optional arguments:
 
 ### Example
 ```shell script
-python logins.py --evtx ./Security.evtx --from "2020-11-30 18:00:00 UTC" --to "2020-12-03 12:00:00 UTC"
+python logins.py --evtx ./Security.evtx --from "2020-11-30 18:00:00" --to "2020-12-03 12:00:00"
 ```

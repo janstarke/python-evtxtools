@@ -197,12 +197,12 @@ def print_logins(secfile, from_date, to_date):
   parser = PyEvtxParser(secfile)
 
   if from_date:
-    from_date = datetime.strptime(from_date, "%Y-%m-%d %H:%M:%S UTC")
+    from_date = datetime.strptime(from_date, "%Y-%m-%d %H:%M:%S")
   else:
     from_date = datetime.min
 
   if to_date:
-    to_date = datetime.strptime(to_date, "%Y-%m-%d %H:%M:%S UTC")
+    to_date = datetime.strptime(to_date, "%Y-%m-%d %H:%M:%S")
   else:
     to_date = datetime.max
 
