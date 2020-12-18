@@ -354,7 +354,7 @@ if __name__ == '__main__':
     if not args.include_local_system:
         excluded_accounts.append('S-1-5-18')
 
-    if not args.include_local_system:
+    if not args.include_anonymous:
         excluded_accounts.append('S-1-5-7')
 
     print_logins(secfile, args.from_date, args.to_date, excluded_accounts)
