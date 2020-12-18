@@ -17,14 +17,16 @@ this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import functools
-import sys
 import argparse
+import os
+
 from evtx import PyEvtxParser
 import xmltodict
 from datetime import datetime, timedelta
 import progressbar
 from enum import Enum
 import xml
+from pathlib import Path
 
 
 class LogonType(Enum):
@@ -32,7 +34,8 @@ class LogonType(Enum):
     LOGIN_FAILURE = 11,
     LOGOUT = 20,
     RDP_ACCEPTED_CONNECTION = 110,
-    RDP_FAILURE = 111
+    RDP_FAILURE = 111,
+    WINRM_FAILURE = 211
 
 
 class EventDescriptor:
@@ -131,6 +134,10 @@ EVENT_DESCRIPTORS = {
     140:  EventDescriptor(type=LogonType.RDP_FAILURE,
                           description='RDP connection failed',
                           workstation_name='IPString'
+                          ),
+
+    192:    EventDescriptor(type=LogonType.WINRM_FAILURE,
+                          description='WinRM authentication failure'
                           )
 }
 
@@ -334,20 +341,17 @@ def handle_record(activity_id: str, event_data: dict, event_id: int, timestamp: 
     else:
         session.merge(event_id, timestamp, event)
 
-def print_logins(secfile, rdpfile, from_date: datetime, to_date: datetime, excluded_acounts: list):
+def print_logins(files_to_scan: list, from_date: datetime, to_date: datetime, excluded_acounts: list):
     sessions = dict()
 
     from_date = datetime.strptime(from_date, "%Y-%m-%d %H:%M:%S") if from_date else datetime.min
     to_date = datetime.strptime(to_date, "%Y-%m-%d %H:%M:%S") if to_date else datetime.max
     assert from_date <= to_date
 
-    if secfile:
-        parser = PyEvtxParser(secfile)
-        parse_records_from_dict(parser, sessions, from_date, to_date, excluded_acounts)
-
-    if rdpfile:
-        parser = PyEvtxParser(rdpfile)
-        parse_records_from_dict(parser, sessions, from_date, to_date, excluded_acounts)
+    for f in files_to_scan:
+        with f.open("rb") as s:
+            parser = PyEvtxParser(s)
+            parse_records_from_dict(parser, sessions, from_date, to_date, excluded_acounts)
 
     for s in sorted(sessions.values()):
         print(str(s))
@@ -391,51 +395,61 @@ def getCorrelationId(record_data: dict) -> str:
                 return d['#text']
     return None
 
+class readable_dir(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        prospective_dir=Path(values)
+        if not prospective_dir.is_dir():
+            raise argparse.ArgumentTypeError("readable_dir:{0} is not a valid path".format(prospective_dir))
+        if os.access(prospective_dir, os.R_OK):
+            setattr(namespace, self.dest, prospective_dir)
+        else:
+            raise argparse.ArgumentTypeError("readable_dir:{0} is not a readable dir".format(prospective_dir))
 
-if __name__ == '__main__':
+
+def main():
+    global args
+    valid_files = [
+        'Security.evtx',
+        'Microsoft-Windows-WinRM%4Operational.evtx',
+        'Microsoft-Windows-RemoteDesktopServices-RdpCoreTS%4Operational.evtx'
+    ]
     parser = argparse.ArgumentParser(description='analyse user sessions')
-    parser.add_argument('--security',
-                        dest='secfile',
-                        help='path of the Security.evtx file',
-                        type=argparse.FileType('rb'))
-
-    parser.add_argument('--rdp',
-                        dest='rdpfile',
-                        help='path of the RdpCoreTS%4Operational.evtx file',
-                        type=argparse.FileType('rb'))
-
+    parser.add_argument('logsdir',
+                        help='directory where logs are stored, e.g. %windir%\\System32\\winevt\\Logs',
+                        action=readable_dir)
     parser.add_argument('--from',
                         dest='from_date',
                         help='timestamp pattern, where to start',
                         type=str)
-
     parser.add_argument('--to',
                         dest='to_date',
                         help='timestamp pattern, where to end',
                         type=str)
-
     parser.add_argument('--include-local-system',
                         dest='include_local_system',
                         help='also show logins of the local system account',
                         action='store_true')
-
     parser.add_argument('--include-anonymous',
                         dest='include_anonymous',
                         help='also show logins of the anonymous account',
                         action='store_true')
-
     args = parser.parse_args()
-    secfile = args.secfile
-    rdpfile = args.rdpfile
-
     system_accounts = [
         'S-1-5-90-1',  # DWM-1
         'S-1-5-90-4'  # DWM-4
     ]
     if not args.include_local_system:
         system_accounts.append('S-1-5-18')
-
     if not args.include_anonymous:
         system_accounts.append('S-1-5-7')
+    files_to_scan = filter(
+        lambda f: f.is_file(), map(
+            lambda sf: args.logsdir / sf,
+            valid_files
+        )
+    )
+    print_logins(files_to_scan, args.from_date, args.to_date, system_accounts)
 
-    print_logins(secfile, rdpfile, args.from_date, args.to_date, system_accounts)
+
+if __name__ == '__main__':
+    main()
