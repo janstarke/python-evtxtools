@@ -21,9 +21,10 @@ import sys
 import argparse
 from evtx import PyEvtxParser
 import xmltodict
-from datetime import datetime
+from datetime import datetime, timedelta
 import progressbar
 from enum import Enum
+import xml
 
 
 class LogonType(Enum):
@@ -173,14 +174,22 @@ class LoginSession:
         return self.__login_timestamp is not None
 
     def __str__(self):
-        return "%s - %s: %s login as %s from %s (%s)" % (
+        return "%s - %s (%s): %s login as %s from %s (%s)" % (
             self.login_time,
             self.logout_time,
+            self.duration,
             self.login_type,
             self.username,
             self.workstation_name,
             self.ip_address
         )
+
+    @property
+    def duration(self) -> timedelta:
+        if self.__login_timestamp and self.__logout_timestamp:
+            return self.__logout_timestamp - self.__login_timestamp
+        else:
+            return ""
 
     @property
     def login_time(self):
@@ -260,13 +269,8 @@ class LoginSession:
                 return other.login_timestamp.__gt__(self.__logout_timestamp)
 
 
-def exclude_event(event_data: dict) -> bool:
-    return event_data['TargetUserSid'] in [
-        'S-1-5-18',  # local system
-        'S-1-5-7',  # anonymous
-        'S-1-5-90-1',  # DWM-1
-        'S-1-5-90-4'  # DWM-4
-    ]
+def exclude_event(event_data: dict, excluded_accounts: dict) -> bool:
+    return event_data['TargetUserSid'] in excluded_accounts
 
 def parse_record_data(record_data: dict) -> dict:
     idx = record_data.find('\n')
@@ -282,7 +286,7 @@ def handle_record(event_data: dict, event_id: int, timestamp: datetime, sessions
     else:
         session.merge(event_id, timestamp, event)
 
-def print_logins(secfile, from_date, to_date):
+def print_logins(secfile, from_date: datetime, to_date: datetime, excluded_acounts: list):
     parser = PyEvtxParser(secfile)
 
     from_date = datetime.strptime(from_date, "%Y-%m-%d %H:%M:%S") if from_date else datetime.min
@@ -294,14 +298,20 @@ def print_logins(secfile, from_date, to_date):
         timestamp = datetime.strptime(record['timestamp'], "%Y-%m-%d %H:%M:%S.%f UTC")
         if timestamp < from_date or timestamp > to_date:
             continue
-        record_data = parse_record_data(record['data'])
+
+        try:
+            record_data = parse_record_data(record['data'])
+        except xml.parsers.expat.ExpatError:
+            # TODO: print warning
+            continue
+
         event_id = int(record_data['Event']['System']['EventID'])
 
         if event_id in EVENT_DESCRIPTORS.keys():
             event_data = dict()
             for d in record_data['Event']['EventData']['Data']:
-                event_data[d['@Name']] = d['#text']
-            if not exclude_event(event_data):
+                event_data[d['@Name']] = d['#text'] if '#text' in d else '-'
+            if not exclude_event(event_data, excluded_accounts):
                 handle_record(event_data, event_id, timestamp, sessions)
 
     for s in sorted(sessions.values()):
@@ -325,7 +335,26 @@ if __name__ == '__main__':
                         help='timestamp pattern, where to end',
                         type=str)
 
+    parser.add_argument('--include-local-system',
+                        dest='include_local_system',
+                        help='also show logins of the local system account',
+                        action='store_true')
+
+    parser.add_argument('--include-anonymous',
+                        dest='include_anonymous',
+                        help='also show logins of the anonymous account',
+                        action='store_true')
+
     args = parser.parse_args()
     secfile = args.secfile or sys.stdin
+    excluded_accounts = [
+        'S-1-5-90-1',  # DWM-1
+        'S-1-5-90-4'  # DWM-4
+    ]
+    if not args.include_local_system:
+        excluded_accounts.append('S-1-5-18')
 
-    print_logins(secfile, args.from_date, args.to_date)
+    if not args.include_local_system:
+        excluded_accounts.append('S-1-5-7')
+
+    print_logins(secfile, args.from_date, args.to_date, excluded_accounts)
