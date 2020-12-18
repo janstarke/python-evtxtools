@@ -30,7 +30,9 @@ import xml
 class LogonType(Enum):
     LOGIN_SUCCESS = 10,
     LOGIN_FAILURE = 11,
-    LOGOUT = 20
+    LOGOUT = 20,
+    RDP_ACCEPTED_CONNECTION = 110,
+    RDP_FAILURE = 111
 
 
 class EventDescriptor:
@@ -43,6 +45,7 @@ class EventDescriptor:
         self.__properties['target_user_sid'] = kwargs.get('target_user_sid')
         self.__properties['target_logon_id'] = kwargs.get('target_logon_id')
         self.__properties['ip_address'] = kwargs.get('ip_address')
+        self.__properties['description'] = kwargs.get('description')
         self.__values = dict()
 
     def instantiate(self, event_data: dict):
@@ -58,6 +61,10 @@ class EventDescriptor:
     @property
     def type(self) -> LogonType:
         return self.__type
+
+    @property
+    def description(self) -> str:
+        return self.__properties.get('description')
 
     @property
     def logon_type(self):
@@ -94,6 +101,16 @@ EVENT_DESCRIPTORS = {
                           target_logon_id='TargetLogonId',
                           ip_address='IpAddress'),
 
+    # https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4625
+    4625: EventDescriptor(type=LogonType.LOGIN_FAILURE,
+                          description='An account failed to log on',
+                          logon_type='LogonType',
+                          workstation_name='WorkstationName',
+                          target_user_name='TargetUserName',
+                          target_user_sid='TargetUserSid',
+                          target_logon_id='TargetLogonId',
+                          ip_address='IpAddress'),
+
     # https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4634
     4634: EventDescriptor(type=LogonType.LOGOUT,
                           target_user_name='TargetUserName',
@@ -104,7 +121,17 @@ EVENT_DESCRIPTORS = {
     4647: EventDescriptor(type=LogonType.LOGOUT,
                           target_user_name='TargetUserName',
                           target_user_sid='TargetUserSid',
-                          target_logon_id='TargetLogonId')
+                          target_logon_id='TargetLogonId'),
+
+    131:  EventDescriptor(type=LogonType.RDP_ACCEPTED_CONNECTION,
+                          description='Accepted RDP connection',
+                          workstation_name='ClientIP'
+                          ),
+
+    140:  EventDescriptor(type=LogonType.RDP_FAILURE,
+                          description='RDP connection failed',
+                          workstation_name='IPString'
+                          )
 }
 
 @functools.total_ordering
@@ -120,7 +147,8 @@ class LoginSession:
         10: "RemoteInteractive",
         11: "CachedInteractive"
     }
-    NO_TIME = "????-??-?? ??:??:??"
+    UNKNOWN_TIME = "????-??-?? ??:??:??"
+    NO_TIME      = "                   "
 
     def __init__(self, event_id: int, timestamp: datetime, event: EventDescriptor):
         self.__login_timestamp = None
@@ -129,6 +157,8 @@ class LoginSession:
         self.__logout_timestamp = None
         self.__logout_event_id = None
         self.__logout_event = None
+        self.__description = None
+        self.__can_logout = True
 
         if event.type == LogonType.LOGIN_SUCCESS:
             self.__login_event_id = event_id
@@ -138,6 +168,12 @@ class LoginSession:
             self.__logout_event_id = event_id
             self.__logout_timestamp = timestamp
             self.__logout_event = event
+        else:
+            self.__login_event_id = event_id
+            self.__login_timestamp = timestamp
+            self.__login_event = event
+            self.__can_logout = False
+            self.__description = event.description
 
         assert self.logged_in or self.logged_out
 
@@ -174,15 +210,24 @@ class LoginSession:
         return self.__login_timestamp is not None
 
     def __str__(self):
-        return "%s - %s (%s): %s login as %s from %s (%s)" % (
-            self.login_time,
-            self.logout_time,
-            self.duration,
-            self.login_type,
-            self.username,
-            self.workstation_name,
-            self.ip_address
-        )
+        if self.__can_logout:
+            return "%s - %s (%s): %s login as %s from %s (%s)" % (
+                self.login_time,
+                self.logout_time,
+                self.duration,
+                self.login_type,
+                self.username,
+                self.workstation_name,
+                self.ip_address
+            )
+        else:
+            return "%s: %s as %s from %s (%s)" % (
+                self.login_time,
+                self.__description,
+                self.username,
+                self.workstation_name,
+                self.ip_address
+            )
 
     @property
     def duration(self) -> timedelta:
@@ -193,11 +238,11 @@ class LoginSession:
 
     @property
     def login_time(self):
-        return self.__login_timestamp.strftime("%Y-%m-%d %H:%M:%S") if self.__login_timestamp else self.NO_TIME
+        return self.__login_timestamp.strftime("%Y-%m-%d %H:%M:%S") if self.__login_timestamp else self.UNKNOWN_TIME
 
     @property
     def logout_time(self):
-        return self.__logout_timestamp.strftime("%Y-%m-%d %H:%M:%S") if self.__logout_timestamp else self.NO_TIME
+        return self.__logout_timestamp.strftime("%Y-%m-%d %H:%M:%S") if self.__logout_timestamp else self.UNKNOWN_TIME
 
     @property
     def login_type(self):
@@ -270,31 +315,46 @@ class LoginSession:
 
 
 def exclude_event(event_data: dict, excluded_accounts: dict) -> bool:
-    return event_data['TargetUserSid'] in excluded_accounts
+    if 'TargetUserSid' in event_data:
+        return event_data['TargetUserSid'] in excluded_accounts
+
+    return False
 
 def parse_record_data(record_data: dict) -> dict:
     idx = record_data.find('\n')
     return xmltodict.parse(record_data[idx:])
 
-def handle_record(event_data: dict, event_id: int, timestamp: datetime, sessions: dict):
+def handle_record(activity_id: str, event_data: dict, event_id: int, timestamp: datetime, sessions: dict):
 
     event = EVENT_DESCRIPTORS.get(event_id).instantiate(event_data)
 
-    session = sessions.get(event.target_logon_id)
+    session = sessions.get(activity_id)
     if session is None:
-        sessions[event.target_logon_id] = LoginSession(event_id, timestamp, event)
+        sessions[activity_id] = LoginSession(event_id, timestamp, event)
     else:
         session.merge(event_id, timestamp, event)
 
-def print_logins(secfile, from_date: datetime, to_date: datetime, excluded_acounts: list):
-    parser = PyEvtxParser(secfile)
+def print_logins(secfile, rdpfile, from_date: datetime, to_date: datetime, excluded_acounts: list):
+    sessions = dict()
 
     from_date = datetime.strptime(from_date, "%Y-%m-%d %H:%M:%S") if from_date else datetime.min
     to_date = datetime.strptime(to_date, "%Y-%m-%d %H:%M:%S") if to_date else datetime.max
     assert from_date <= to_date
 
-    sessions = dict()
-    for record in progressbar.progressbar(parser.records()):
+    if secfile:
+        parser = PyEvtxParser(secfile)
+        parse_records_from_dict(parser, sessions, from_date, to_date, excluded_acounts)
+
+    if rdpfile:
+        parser = PyEvtxParser(rdpfile)
+        parse_records_from_dict(parser, sessions, from_date, to_date, excluded_acounts)
+
+    for s in sorted(sessions.values()):
+        print(str(s))
+
+
+def parse_records_from_dict(records, sessions, from_date, to_date, excluded_accounts):
+    for record in progressbar.progressbar(records.records()):
         timestamp = datetime.strptime(record['timestamp'], "%Y-%m-%d %H:%M:%S.%f UTC")
         if timestamp < from_date or timestamp > to_date:
             continue
@@ -310,19 +370,38 @@ def print_logins(secfile, from_date: datetime, to_date: datetime, excluded_acoun
         if event_id in EVENT_DESCRIPTORS.keys():
             event_data = dict()
             for d in record_data['Event']['EventData']['Data']:
-                event_data[d['@Name']] = d['#text'] if '#text' in d else '-'
+                if isinstance(d, dict):
+                    event_data[d['@Name']] = d['#text'] if '#text' in d else '-'
             if not exclude_event(event_data, excluded_accounts):
-                handle_record(event_data, event_id, timestamp, sessions)
+                activity_id = getCorrelationId(record_data)
+                handle_record(activity_id, event_data, event_id, timestamp, sessions)
 
-    for s in sorted(sessions.values()):
-        print(str(s))
+
+def getCorrelationId(record_data: dict) -> str:
+    correlation = record_data['Event']['System'].get('Correlation')
+    if correlation and '@ActivityID' in correlation:
+        activity_id = record_data['Event']['System']['Correlation']['@ActivityID']
+        if activity_id and len(activity_id) > 0:
+            return activity_id
+
+    data = record_data['Event']['EventData'].get('Data')
+    if data:
+        for d in record_data['Event']['EventData']['Data']:
+            if d['@Name'] == 'TargetLogonId':
+                return d['#text']
+    return None
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='analyse user sessions')
-    parser.add_argument('--evtx',
+    parser.add_argument('--security',
                         dest='secfile',
-                        help='path of the Security.evtx file (default: stdin)',
+                        help='path of the Security.evtx file',
+                        type=argparse.FileType('rb'))
+
+    parser.add_argument('--rdp',
+                        dest='rdpfile',
+                        help='path of the RdpCoreTS%4Operational.evtx file',
                         type=argparse.FileType('rb'))
 
     parser.add_argument('--from',
@@ -346,15 +425,17 @@ if __name__ == '__main__':
                         action='store_true')
 
     args = parser.parse_args()
-    secfile = args.secfile or sys.stdin
-    excluded_accounts = [
+    secfile = args.secfile
+    rdpfile = args.rdpfile
+
+    system_accounts = [
         'S-1-5-90-1',  # DWM-1
         'S-1-5-90-4'  # DWM-4
     ]
     if not args.include_local_system:
-        excluded_accounts.append('S-1-5-18')
+        system_accounts.append('S-1-5-18')
 
     if not args.include_anonymous:
-        excluded_accounts.append('S-1-5-7')
+        system_accounts.append('S-1-5-7')
 
-    print_logins(secfile, args.from_date, args.to_date, excluded_accounts)
+    print_logins(secfile, rdpfile, args.from_date, args.to_date, system_accounts)
