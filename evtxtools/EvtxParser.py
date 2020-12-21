@@ -90,7 +90,7 @@ class RawEventList:
     def __get_next_record(self):
         while len(self.__files) > 0 or self.__reader is not None:
             if self.__reader is None:
-                self.__reader = PyEvtxParser(str(self.__files.pop())).records()
+                self.__reader = PyEvtxParser(str(self.__files.pop())).records_json()
 
             try:
                 return self.__reader.__next__()

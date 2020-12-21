@@ -1,3 +1,2 @@
 evtx
-xmltodict
 progressbar2
