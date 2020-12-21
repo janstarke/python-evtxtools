@@ -1,2 +1,3 @@
 evtx
+orjson
 progressbar2

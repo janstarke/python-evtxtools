@@ -1,7 +1,7 @@
 import xml
 from datetime import datetime
 
-import json
+import orjson
 
 
 class WindowsEvent:
@@ -18,7 +18,7 @@ class WindowsEvent:
             raise WindowsEvent.IgnoreThisEvent()
 
         try:
-            record_data = json.loads(record['data'])
+            record_data = orjson.loads(record['data'])
         except xml.parsers.expat.ExpatError:
             # TODO: print warning
             raise ValueError("invalid XML")
