@@ -1,0 +1,11 @@
+from enum import Enum
+
+
+class LogonType(Enum):
+    LOGIN_SUCCESS = 10,
+    LOGIN_FAILURE = 11,
+    LOGOUT = 20,
+    RDP_ACCEPTED_CONNECTION = 110,
+    RDP_CLOSED_CONNECTION = 120,
+    RDP_FAILURE = 111,
+    WINRM_FAILURE = 211
