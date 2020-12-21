@@ -6,15 +6,20 @@ Parses `Security.evtx` and correlates logon and logoff events to display a user 
 
 ### Usage
 ```
-usage: logins.py [-h] [--evtx SECFILE] [--from FROM_DATE] [--to TO_DATE]
+usage: logins.py [-h] [--from FROM_DATE] [--to TO_DATE] [--include-local-system] [--include-anonymous] logsdir
 
 analyse user sessions
 
+positional arguments:
+  logsdir               directory where logs are stored, e.g. %windir%\System32\winevt\Logs
+
 optional arguments:
-  -h, --help        show this help message and exit
-  --evtx SECFILE    path of the Security.evtx file (default: stdin)
-  --from FROM_DATE  timestamp pattern, where to start
-  --to TO_DATE      timestamp pattern, where to end
+  -h, --help            show this help message and exit
+  --from FROM_DATE      timestamp pattern, where to start
+  --to TO_DATE          timestamp pattern, where to end
+  --include-local-system
+                        also show logins of the local system account
+  --include-anonymous   also show logins of the anonymous account
 ```
 
 ### Example

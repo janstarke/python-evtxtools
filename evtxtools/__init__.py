@@ -7,7 +7,7 @@ from datetime import datetime
 def parse_arguments():
     parser = argparse.ArgumentParser(description='analyse user sessions')
     parser.add_argument('logsdir',
-                        help='directory where logs are stored, e.g. %windir%\\System32\\winevt\\Logs',
+                        help='directory where logs are stored, e.g. %%windir%%\\System32\\winevt\\Logs',
                         action=readable_dir)
     parser.add_argument('--from',
                         dest='from_date',
