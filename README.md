@@ -1,5 +1,7 @@
 # evtxtools
 
+Collection of command line tools to correlate windows event logs. This set of tools is aimed to be used at forensic investigations.
+
 ## `login.py`
 
 Parses `Security.evtx` and correlates logon and logoff events to display a user session timeline.
