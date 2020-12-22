@@ -24,7 +24,12 @@ class WindowsEvent:
         pass
 
     def __init__(self, record: dict, included_event_ids: set, from_date: datetime, to_date: datetime):
-        self.__timestamp = datetime.strptime(record['timestamp'], "%Y-%m-%d %H:%M:%S.%f UTC")
+        timestamp = record['timestamp']
+        if timestamp[19] == '.':
+            self.__timestamp = datetime.strptime(record['timestamp'], "%Y-%m-%d %H:%M:%S.%f %Z")
+        else:
+            self.__timestamp = datetime.strptime(record['timestamp'], "%Y-%m-%d %H:%M:%S %Z")
+
 
         if from_date and self.__timestamp < from_date:
             raise WindowsEvent.IgnoreThisEvent()
@@ -32,13 +37,13 @@ class WindowsEvent:
         if to_date and self.__timestamp > to_date:
             raise WindowsEvent.IgnoreThisEvent()
 
-        try:
-            record_data = orjson.loads(record['data'])
-        except xml.parsers.expat.ExpatError:
-            # TODO: print warning
-            raise ValueError("invalid XML")
+        record_data = orjson.loads(record['data'])
 
-        self.__event_id = int(record_data['Event']['System']['EventID'])
+        self.__event_id = record_data['Event']['System']['EventID']
+        if isinstance(self.__event_id, dict):
+            self.__event_id = self.__event_id['#text']
+        self.__event_id = int(self.__event_id)
+
         if self.__event_id not in included_event_ids:
             raise WindowsEvent.IgnoreThisEvent()
 
@@ -97,13 +102,16 @@ class WindowsEvent:
     def descriptor(self) -> EventDescriptor:
         return self.__descriptor
 
-    def __getattr__(self, item):
-        key = self.descriptor.properties.get(item)
-        if key is None:
-            return None
+    #def __getattr__(self, item):
+    #    key = self.descriptor.properties.get(item)
+    #    if key is None:
+    #        return None
+    #
+    #    return self.__event_data.get(key)
 
-        return self.__event_data.get(key)
+    class FriendlyDict(dict):
+        def __missing__(self, key):
+            return '-'
 
     def __str__(self):
-        x = self.descriptor.description.format(**self.event_data)
-        return x
+        return self.descriptor.description.format_map(WindowsEvent.FriendlyDict(self.event_data))

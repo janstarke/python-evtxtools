@@ -101,6 +101,12 @@ EVENT_DESCRIPTORS = {
                           description="{SubjectUserName} attempted to run {ProcessName} as {TargetUserName}",
                           activity_change=ActivityChange.NO_ACTIVITY),
 
+    7045: EventDescriptor(type=EventType.LOGIN_SUCCESS,
+                          activity_change=ActivityChange.NO_ACTIVITY,
+                          log="System.evtx",
+                          description="New service {ServiceName} installed as {ImagePath}, "
+                                      "ServiceType={ServiceType}, StartType={StartType}",
+                          ),
     131:  EventDescriptor(type=EventType.RDP_ACCEPTED_CONNECTION,
                           description='Accepted RDP connection from {ClientIP}',
                           activity_change=ActivityChange.START_ACTIVITY
