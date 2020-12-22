@@ -96,6 +96,7 @@ EVENT_DESCRIPTORS = {
                           target_user_sid='TargetUserSid',
                           target_logon_id='TargetLogonId'),
 
+    # https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4648
     4648: EventDescriptor(type=EventType.LOGIN_SUCCESS,
                           description="{SubjectUserName} attempted to run {ProcessName} as {TargetUserName}",
                           activity_change=ActivityChange.NO_ACTIVITY),
