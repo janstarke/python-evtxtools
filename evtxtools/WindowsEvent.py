@@ -3,6 +3,21 @@ from datetime import datetime
 
 import orjson
 
+from evtxtools.EventDescriptor import EVENT_DESCRIPTORS, EventDescriptor
+
+
+LOGON_TYPES = {
+    2: "Interactive",
+    3: "Network",
+    4: "Batch",
+    5: "Service",
+    7: "Unlock",
+    8: "NetworkCleartext",
+    9: "NewCredentials",
+    10: "RemoteInteractive",
+    11: "CachedInteractive"
+}
+
 
 class WindowsEvent:
     class IgnoreThisEvent(Exception):
@@ -24,20 +39,28 @@ class WindowsEvent:
             raise ValueError("invalid XML")
 
         self.__event_id = int(record_data['Event']['System']['EventID'])
-
-        if included_event_ids and self.__event_id not in included_event_ids:
+        if self.__event_id not in included_event_ids:
             raise WindowsEvent.IgnoreThisEvent()
 
+        self.__descriptor = EVENT_DESCRIPTORS[self.__event_id]
+
+
         self.__event_data = record_data['Event']['EventData']
+        self.__beautify_event_data()
 
         try:
-            self.__activity_id = self.__get_correlation_id(record_data)
+            self.__activity_id = self.__get_correlation_id(record_data)\
+                                 or self.__timestamp.strftime("%Y-%m-%d %H:%M:%S.%f")
         except TypeError:
             pass
         except KeyError:
             pass
         except AttributeError:
             pass
+
+    def __beautify_event_data(self):
+        if 'LogonType' in self.__event_data:
+            self.__event_data['LogonType'] = LOGON_TYPES[int(self.__event_data['LogonType'])]
 
     def __get_correlation_id(self, record_data: dict) -> str:
         try:
@@ -69,3 +92,18 @@ class WindowsEvent:
     @property
     def event_data(self) -> dict:
         return self.__event_data
+
+    @property
+    def descriptor(self) -> EventDescriptor:
+        return self.__descriptor
+
+    def __getattr__(self, item):
+        key = self.descriptor.properties.get(item)
+        if key is None:
+            return None
+
+        return self.__event_data.get(key)
+
+    def __str__(self):
+        x = self.descriptor.description.format(**self.event_data)
+        return x

@@ -5,7 +5,7 @@ import progressbar
 import xmltodict
 from evtx import PyEvtxParser
 from evtxtools.EventDescriptor import EVENT_DESCRIPTORS
-from evtxtools.LoginSession import LoginSession
+from evtxtools.Activity import Activity
 from evtxtools.RawEventList import RawEventList
 from evtxtools.WellKnownSids import *
 from evtxtools.WindowsEvent import WindowsEvent
@@ -48,14 +48,12 @@ class EvtxParser:
         return xmltodict.parse(record_data[idx:])
 
     def handle_event(self, event: WindowsEvent):
+        activity = self.__activities.get(event.activity_id)
+        if activity is None:
+            activity = Activity()
+            self.__activities[event.activity_id] = activity
+        activity.add_event(event)
 
-        event_desc = EVENT_DESCRIPTORS.get(event.event_id).instantiate(event.event_data)
-
-        session = self.__activities.get(event.activity_id)
-        if session is None:
-            self.__activities[event.activity_id] = LoginSession(event.event_id, event.timestamp, event_desc)
-        else:
-            session.merge(event.event_id, event.timestamp, event_desc)
 
     def parse_events(self):
         event_list = RawEventList(self.__files_to_scan, set(EVENT_DESCRIPTORS.keys()), self.__from_date, self.__to_date)

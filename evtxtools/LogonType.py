@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class LogonType(Enum):
+class EventType(Enum):
     LOGIN_SUCCESS = 10,
     LOGIN_FAILURE = 11,
     LOGOUT = 20,
