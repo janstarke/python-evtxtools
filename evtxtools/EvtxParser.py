@@ -26,6 +26,7 @@ class EvtxParser:
     KNOWN_FILES = [
         'Security.evtx',
         'System.evtx',
+        'Windows PowerShell.evtx'
         'Microsoft-Windows-WinRM%4Operational.evtx',
         'Microsoft-Windows-RemoteDesktopServices-RdpCoreTS%4Operational.evtx'
     ]

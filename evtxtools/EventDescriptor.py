@@ -74,5 +74,12 @@ EVENT_DESCRIPTORS = {
     192:    EventDescriptor(activity_change=ActivityChange.NO_ACTIVITY,
                             log_source=LogSource.Microsoft_Windows_RemoteDesktopServices_RdpCoreTS_Operational,
                             description='WinRM authentication failure'
-                            )
+                            ),
+
+    400:    EventDescriptor(activity_change=ActivityChange.START_ACTIVITY,
+                            log_source=LogSource.Windows_PowerShell,
+                            description="Started PowerShell command: {HostApplication}"),
+    403:    EventDescriptor(activity_change=ActivityChange.END_ACTIVITY,
+                            log_source=LogSource.Windows_PowerShell,
+                            description="End of PowerShell command")
 }
