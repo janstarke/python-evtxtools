@@ -45,8 +45,6 @@ class RawEventList:
 
     def __event_parser_worker(self):
         while True:
-            record = None
-
             if self.__reader_thread is None:  # no records will ever be made available to be parsed
                 try:
                     record = self.__queue.get_nowait()

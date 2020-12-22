@@ -1,4 +1,5 @@
 from enum import unique, Enum
+from pathlib import Path
 
 
 @unique
@@ -201,3 +202,8 @@ class LogSource(Enum):
     System = 'System'
     Windows_PowerShell = 'Windows PowerShell'
     WitnessClientAdmin = 'WitnessClientAdmin'
+
+    @staticmethod
+    def from_file(file: Path):
+        filename = file.name.replace("%4", "/").replace(".evtx", "")
+        return LogSource(filename)

@@ -4,7 +4,7 @@ from datetime import datetime
 import orjson
 
 from evtxtools.EventDescriptor import EVENT_DESCRIPTORS, EventDescriptor
-
+from evtxtools.LogSource import LogSource
 
 LOGON_TYPES = {
     2: "Interactive",
@@ -48,7 +48,8 @@ class WindowsEvent:
             raise WindowsEvent.IgnoreThisEvent()
 
         self.__descriptor = EVENT_DESCRIPTORS[self.__event_id]
-
+        if self.__descriptor.log_source != LogSource(record_data['Event']['System']['Channel']):
+            raise WindowsEvent.IgnoreThisEvent()
 
         self.__event_data = record_data['Event']['EventData']
         self.__beautify_event_data()

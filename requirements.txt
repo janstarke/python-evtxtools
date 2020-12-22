@@ -1,3 +1,4 @@
-evtx
-orjson
+evtx~=0.6.11
+orjson~=3.4.6
 progressbar2
+xmltodict~=0.12.0

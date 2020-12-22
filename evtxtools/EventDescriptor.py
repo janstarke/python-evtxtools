@@ -18,6 +18,10 @@ class EventDescriptor:
     def description(self) -> str:
         return self.__description
 
+    @property
+    def log_source(self):
+        return self.__log_source
+
 
 EVENT_DESCRIPTORS = {
     # https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4624
