@@ -16,29 +16,12 @@ You should have received a copy of the GNU General Public License along with
 this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
-import argparse
-import os
-from datetime import datetime
-
-from pathlib import Path
-
 from evtxtools.EvtxParser import EvtxParser
 import evtxtools
 
 
-class readable_dir(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):
-        prospective_dir=Path(values)
-        if not prospective_dir.is_dir():
-            raise argparse.ArgumentTypeError("readable_dir:{0} is not a valid path".format(prospective_dir))
-        if os.access(prospective_dir, os.R_OK):
-            setattr(namespace, self.dest, prospective_dir)
-        else:
-            raise argparse.ArgumentTypeError("readable_dir:{0} is not a readable dir".format(prospective_dir))
-
-
 def main():
-    args = evtxtools.parse_arguments()
+    args = evtxtools.parse_logins_arguments()
     sid_filter = evtxtools.WellKnownSidFilter()
 
     if args.include_local_system:
