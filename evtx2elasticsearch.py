@@ -64,13 +64,20 @@ class SimpleWindowsEvent:
         self.related_activity_id = str(self["/System/Correlation/@RelatedActivityID"])
         self.channel = str(self["/System/Channel"])
         self.computer = str(self["/System/Computer"])
-        self.timecreated = datetime.strptime(self["/System/TimeCreated/@SystemTime"], "%Y-%m-%dT%H:%M:%S.%fZ")
+        self.timecreated = self.get_time_created(self["/System/TimeCreated/@SystemTime"])
         self.user = str(self["/System/Security/@UserID"])
         self.event_data = self.__record['Event'].get('EventData')
 
     @staticmethod
     def safe_int(item):
         return int(item) if item else None
+
+    @staticmethod
+    def get_time_created(timecreated):
+        if timecreated[19] == '.':
+            return datetime.strptime(timecreated, "%Y-%m-%dT%H:%M:%S.%fZ")
+        else:
+            return datetime.strptime(timecreated, "%Y-%m-%dT%H:%M:%SZ")
 
     def cache_values(self, prefix: str, dictionary: dict):
         for _key, _value in dictionary.items():
@@ -154,6 +161,28 @@ class EventGenerator:
 
 def evtx2elasticsearch(evtx_files: set, index: str):
     connections.create_connection(hosts=['localhost'], timeout=20)
+
+    index_template = """
+    {
+      "template": {
+        "settings": {},
+        "mappings": {
+          "dynamic_templates": [
+            {
+              "event_data": {
+                "path_match": "event_data.*",
+                "mapping": {
+                  "type": "text"
+                }
+              }
+            }
+          ]
+        },
+        "aliases": {}
+      }
+    }
+    """
+
     el.WindowsEvent.init(index=index)
 
     for f in evtx_files:
