@@ -53,13 +53,13 @@ class SimpleWindowsEvent:
         self.__record = orjson.loads(record['data'])
         self.cache_values(prefix="", dictionary=self.__record['Event'])
 
-        self.event_id = int(self["/System/EventID"])
-        self.record_id = int(self["/System/EventRecordID"])
-        self.level = int(self["/System/Level"])
+        self.event_id = self.safe_int(self["/System/EventID"])
+        self.record_id = self.safe_int(self["/System/EventRecordID"])
+        self.level = self.safe_int(self["/System/Level"])
         self.provider_name = str(self["/System/Provider/@Name"])
         self.provider_guid = str(self["/System/Provider/@Guid"])
-        self.process_id = int(self["/System/Execution/@ProcessID"])
-        self.thread_id = int(self["/System/Execution/@ThreadID"])
+        self.process_id = self.safe_int(self["/System/Execution/@ProcessID"])
+        self.thread_id = self.safe_int(self["/System/Execution/@ThreadID"])
         self.activity_id = str(self["/System/Correlation/@ActivityID"])
         self.related_activity_id = str(self["/System/Correlation/@RelatedActivityID"])
         self.channel = str(self["/System/Channel"])
@@ -67,6 +67,10 @@ class SimpleWindowsEvent:
         self.timecreated = datetime.strptime(self["/System/TimeCreated/@SystemTime"], "%Y-%m-%dT%H:%M:%S.%fZ")
         self.user = str(self["/System/Security/@UserID"])
         self.event_data = self.__record['Event'].get('EventData')
+
+    @staticmethod
+    def safe_int(item):
+        return int(item) if item else None
 
     def cache_values(self, prefix: str, dictionary: dict):
         for _key, _value in dictionary.items():
@@ -80,7 +84,7 @@ class SimpleWindowsEvent:
             _id = prefix + self.SEPARATOR + _key
 
             if _key == '#text':
-                self.__values[_id] = _value
+                self.__values[prefix] = _value
                 continue
 
             if isinstance(_value, dict):
