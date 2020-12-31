@@ -63,3 +63,15 @@ def parse_evtx2sqlite_arguments():
                         action=creatable_file)
     args = parser.parse_args()
     return args
+
+
+def parse_evtx2elasticsearch_arguments():
+    parser = argparse.ArgumentParser(description='convert evtx files to an elasticsearch index')
+    parser.add_argument('logsdir',
+                        help='directory where logs are stored, e.g. %%windir%%\\System32\\winevt\\Logs',
+                        action=readable_dir)
+    parser.add_argument('indexname',
+                        help="name of elasticsearch index",
+                        type=str)
+    args = parser.parse_args()
+    return args

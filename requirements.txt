@@ -2,4 +2,10 @@ evtx~=0.6.11
 orjson~=3.4.6
 progressbar2
 xmltodict~=0.12.0
+
+# required by evtx2sqlite.py
 sqlalchemy
+
+# required by evtx2elasticsearch.py
+elasticsearch>=7.0.0
+elasticsearch-dsl>=7.0.0
