@@ -32,7 +32,7 @@ At the moment, one needs to create an index pattern first:
 ### Usage
 
 ```
-usage: evtx2elasticsearch.py [-h] logsdir indexname
+usage: evtx2elasticsearch.py [-h] [--override] logsdir indexname
 
 convert evtx files to an elasticsearch index
 
@@ -42,6 +42,7 @@ positional arguments:
 
 optional arguments:
   -h, --help  show this help message and exit
+  --override  overrides an existing index, if it already exists
 ```
 
 ## `logins.py`
