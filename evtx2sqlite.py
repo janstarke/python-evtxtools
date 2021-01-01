@@ -46,8 +46,8 @@ class Memoize:
 
 
 def db_create(db_file: Path) -> Engine:
-    #engine = create_engine('sqlite:///{file}'.format(file=db_file.name), echo=False)
-    engine = create_engine('sqlite:///:memory:', echo=False)
+    engine = create_engine('sqlite:///{file}'.format(file=db_file.name), echo=False)
+    #engine = create_engine('sqlite:///:memory:', echo=False)
 
     db.Base.metadata.create_all(engine)
 
@@ -146,7 +146,12 @@ def store_event(session, record:dict):
                 continue
             if key == 'Binary':
                 continue
-            batch.append({'id':db.id(), 'eventid':event['id'], 'key':key, 'value':value})
+            if isinstance(value, dict) and '#text' in value:
+                value = value['#text']
+            elif isinstance(value, list):
+                value = ', '.join(value)
+            if value:
+                batch.append({'id':db.id(), 'eventid':event['id'], 'key':key, 'value':value})
         if len(batch) > 0:
             session.execute(db.EventData.__table__.insert(),batch)
     session.commit()
@@ -158,7 +163,7 @@ def evtx2sqlite(evtx_files: set, db_file: Path):
 
     for f in evtx_files:
         parser = PyEvtxParser(str(f))
-        for e in progressbar.progressbar(parser.records_json()):
+        for e in progressbar.progressbar(parser.records_json(), prefix=f.name):
             store_event(session, e)
         #return
 

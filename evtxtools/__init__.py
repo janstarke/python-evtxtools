@@ -67,6 +67,10 @@ def parse_evtx2sqlite_arguments():
 
 def parse_evtx2elasticsearch_arguments():
     parser = argparse.ArgumentParser(description='convert evtx files to an elasticsearch index')
+    parser.add_argument('--override',
+                        dest='override_index',
+                        help='overrides an existing index, if it already exists',
+                        action='store_true')
     parser.add_argument('logsdir',
                         help='directory where logs are stored, e.g. %%windir%%\\System32\\winevt\\Logs',
                         action=readable_dir)

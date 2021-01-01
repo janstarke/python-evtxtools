@@ -14,6 +14,7 @@ FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with
 this program. If not, see <http://www.gnu.org/licenses/>.
 """
+import sys
 from datetime import datetime
 
 import progressbar
@@ -22,7 +23,7 @@ from evtx import PyEvtxParser
 import el
 import evtxtools
 import orjson
-from elasticsearch_dsl import connections
+from elasticsearch_dsl import connections, Index, IndexTemplate
 from elasticsearch.helpers import bulk
 
 class SimpleWindowsEvent:
@@ -159,8 +160,10 @@ class EventGenerator:
                 index=self.__index)
 
 
-def evtx2elasticsearch(evtx_files: set, index: str):
+def evtx2elasticsearch(evtx_files: set, index: str, override: False):
     connections.create_connection(hosts=['localhost'], timeout=20)
+
+    create_index(index, override)
 
     index_template = """
     {
@@ -202,6 +205,17 @@ def evtx2elasticsearch(evtx_files: set, index: str):
         bulk(connections.get_connection(), generator, index=index)
 
 
+def create_index(index, override):
+    i = Index(name=index)
+    if i.exists():
+        if override:
+            i.delete()
+        else:
+            raise ValueError("index '{index}' exists already".format(index=index))
+    assert not i.exists()
+    i.create()
+
+
 def main():
     args = evtxtools.parse_evtx2elasticsearch_arguments()
 
@@ -209,8 +223,14 @@ def main():
     for f in args.logsdir.iterdir():
         if f.name.endswith(".evtx"):
             evtx_files.add(f)
-    evtx2elasticsearch(evtx_files, args.indexname)
+
+    try:
+        evtx2elasticsearch(evtx_files, index=args.indexname, override=args.override_index)
+    except Exception as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    return 0
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
