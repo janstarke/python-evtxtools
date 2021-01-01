@@ -32,17 +32,18 @@ At the moment, one needs to create an index pattern first:
 ### Usage
 
 ```
-usage: evtx2elasticsearch.py [-h] [--override] logsdir indexname
+usage: evtx2elasticsearch.py [-h] [--override] [--index INDEX] [--template TEMPLATE] logsdir
 
 convert evtx files to an elasticsearch index
 
 positional arguments:
-  logsdir     directory where logs are stored, e.g. %windir%\System32\winevt\Logs
-  indexname   name of elasticsearch index
+  logsdir              directory where logs are stored, e.g. %windir%\System32\winevt\Logs
 
 optional arguments:
-  -h, --help  show this help message and exit
-  --override  overrides an existing index, if it already exists
+  -h, --help           show this help message and exit
+  --override           overrides an existing index, if it already exists
+  --index INDEX        name of elasticsearch index
+  --template TEMPLATE  name of index template
 ```
 
 ## `logins.py`
