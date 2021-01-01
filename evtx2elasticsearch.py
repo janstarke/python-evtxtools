@@ -23,6 +23,7 @@ from evtx import PyEvtxParser
 import el
 import evtxtools
 import orjson
+import coloredlogs, logging
 from elasticsearch_dsl import connections, Index, IndexTemplate
 from elasticsearch.helpers import bulk
 
@@ -160,7 +161,7 @@ class EventGenerator:
                 index=self.__index)
 
 
-def evtx2elasticsearch(evtx_files: set, index: str, override: False):
+def evtx2elasticsearch(evtx_files: set, index: str, template:str, override: False):
     connections.create_connection(hosts=['localhost'], timeout=20)
 
     create_index(index, override)
@@ -211,12 +212,18 @@ def create_index(index, override):
         if override:
             i.delete()
         else:
-            raise ValueError("index '{index}' exists already".format(index=index))
+            raise ValueError("index '{index}' exists already, "
+                             "you must specify '--override' to override this index".format(index=index))
     assert not i.exists()
     i.create()
 
 
 def main():
+    logger = logging.getLogger()
+    coloredlogs.install(
+        level='INFO',
+        logger=logger,
+        fmt="%(levelname)s %(message)s")
     args = evtxtools.parse_evtx2elasticsearch_arguments()
 
     evtx_files = set()
@@ -224,10 +231,13 @@ def main():
         if f.name.endswith(".evtx"):
             evtx_files.add(f)
 
+    template = args.template or args.index + "-template"
+    logger.info("using {template} as index template".format(template=template))
+
     try:
-        evtx2elasticsearch(evtx_files, index=args.indexname, override=args.override_index)
-    except Exception as e:
-        print(str(e), file=sys.stderr)
+        evtx2elasticsearch(evtx_files, index=args.index, template=template, override=args.override_index)
+    except ValueError as e:
+        logger.fatal(str(e))
         return 1
     return 0
 
