@@ -24,7 +24,7 @@ import el
 import evtxtools
 import orjson
 import coloredlogs, logging
-from elasticsearch_dsl import connections, Index, IndexTemplate
+from elasticsearch_dsl import connections, Index, IndexTemplate, Mapping
 from elasticsearch.helpers import bulk
 
 class SimpleWindowsEvent:
@@ -164,28 +164,7 @@ class EventGenerator:
 def evtx2elasticsearch(evtx_files: set, index: str, template:str, override: False):
     connections.create_connection(hosts=['localhost'], timeout=20)
 
-    create_index(index, override)
-
-    index_template = """
-    {
-      "template": {
-        "settings": {},
-        "mappings": {
-          "dynamic_templates": [
-            {
-              "event_data": {
-                "path_match": "event_data.*",
-                "mapping": {
-                  "type": "text"
-                }
-              }
-            }
-          ]
-        },
-        "aliases": {}
-      }
-    }
-    """
+    create_index(index=index, template=template, override=override)
 
     el.WindowsEvent.init(index=index)
 
@@ -206,7 +185,7 @@ def evtx2elasticsearch(evtx_files: set, index: str, template:str, override: Fals
         bulk(connections.get_connection(), generator, index=index)
 
 
-def create_index(index, override):
+def create_index(index: str, template: str, override: bool):
     logger = logging.getLogger()
     i = Index(name=index)
     if i.exists():
@@ -217,8 +196,29 @@ def create_index(index, override):
             raise ValueError("index '{index}' exists already, "
                              "you must specify '--override' to override this index".format(index=index))
     assert not i.exists()
-    logger.info("creating index '{index}'".format(index=index))
+    index_template = """
+        {
+          "template": {
+            "settings": {},
+            "mappings": {
+              "dynamic_templates": [
+                {
+                  "event_data": {
+                    "path_match": "event_data.*",
+                    "mapping": {
+                      "type": "text"
+                    }
+                  }
+                }
+              ]
+            },
+            "aliases": {}
+          }
+        }
+        """
+    i.get_or_create_mapping().meta('numeric_detection', False)
     i.create()
+
 
 
 def main():
