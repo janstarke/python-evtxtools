@@ -6,6 +6,29 @@ Collection of command line tools to correlate windows event logs. This set of to
 
 Imports Windows event logs (`evtx` files) into an elasticsearch index, using the [Elasticsearch Common Schema](https://www.elastic.co/guide/en/ecs/current/index.html)
 
+At the moment, one needs to create an index pattern first:
+
+```json
+{
+  "template": {
+    "settings": {},
+    "mappings": {
+      "dynamic_templates": [
+        {
+          "event_data": {
+            "path_match": "event_data.*",
+            "mapping": {
+              "type": "text"
+            }
+          }
+        }
+      ]
+    },
+    "aliases": {}
+  }
+}
+```
+
 ### Usage
 
 ```
