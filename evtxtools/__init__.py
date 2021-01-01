@@ -77,8 +77,5 @@ def parse_evtx2elasticsearch_arguments():
     parser.add_argument('--index',
                         help="name of elasticsearch index",
                         type=str)
-    parser.add_argument('--template',
-                        help="name of index template",
-                        type=str)
     args = parser.parse_args()
     return args

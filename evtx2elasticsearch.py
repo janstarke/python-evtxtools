@@ -70,6 +70,22 @@ class SimpleWindowsEvent:
         self.user = str(self["/System/Security/@UserID"])
         self.event_data = self.__record['Event'].get('EventData')
 
+        if self.event_data:
+            if '#attributes' in self.event_data:
+                for key, value in self.event_data['#attributes'].items():
+                    self.event_data['@' + key] = value
+                del self.event_data['#attributes']
+
+            for key, value in self.event_data.items():
+                if isinstance(value, dict):
+                    if '#text' in value:
+                        self.event_data[key] = str(value['#text'])
+                    else:
+                        raise RuntimeError("invalid datatype")
+                else:
+                    self.event_data[key] = str(value)
+
+
     @staticmethod
     def safe_int(item):
         return int(item) if item else None
@@ -161,10 +177,10 @@ class EventGenerator:
                 index=self.__index)
 
 
-def evtx2elasticsearch(evtx_files: set, index: str, template:str, override: False):
+def evtx2elasticsearch(evtx_files: set, index: str,  override: False):
     connections.create_connection(hosts=['localhost'], timeout=20)
 
-    create_index(index=index, template=template, override=override)
+    create_index(index=index, override=override)
 
     el.WindowsEvent.init(index=index)
 
@@ -185,7 +201,7 @@ def evtx2elasticsearch(evtx_files: set, index: str, template:str, override: Fals
         bulk(connections.get_connection(), generator, index=index)
 
 
-def create_index(index: str, template: str, override: bool):
+def create_index(index: str, override: bool):
     logger = logging.getLogger()
     i = Index(name=index)
     if i.exists():
@@ -235,11 +251,8 @@ def main():
         if f.name.endswith(".evtx"):
             evtx_files.add(f)
 
-    template = args.template or args.index + "-template"
-    logger.info("using {template} as index template".format(template=template))
-
     try:
-        evtx2elasticsearch(evtx_files, index=args.index, template=template, override=args.override_index)
+        evtx2elasticsearch(evtx_files, index=args.index, override=args.override_index)
     except ValueError as e:
         logger.fatal(str(e))
         return 1

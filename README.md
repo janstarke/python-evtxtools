@@ -6,44 +6,22 @@ Collection of command line tools to correlate windows event logs. This set of to
 
 Imports Windows event logs (`evtx` files) into an elasticsearch index, using the [Elasticsearch Common Schema](https://www.elastic.co/guide/en/ecs/current/index.html)
 
-At the moment, one needs to create an index pattern first:
-
-```json
-{
-  "template": {
-    "settings": {},
-    "mappings": {
-      "dynamic_templates": [
-        {
-          "event_data": {
-            "path_match": "event_data.*",
-            "mapping": {
-              "type": "text"
-            }
-          }
-        }
-      ]
-    },
-    "aliases": {}
-  }
-}
-```
+_No index pattern is required anymore :-)_
 
 ### Usage
 
 ```
-usage: evtx2elasticsearch.py [-h] [--override] [--index INDEX] [--template TEMPLATE] logsdir
+usage: evtx2elasticsearch.py [-h] [--override] [--index INDEX] logsdir
 
 convert evtx files to an elasticsearch index
 
 positional arguments:
-  logsdir              directory where logs are stored, e.g. %windir%\System32\winevt\Logs
+  logsdir        directory where logs are stored, e.g. %windir%\System32\winevt\Logs
 
 optional arguments:
-  -h, --help           show this help message and exit
-  --override           overrides an existing index, if it already exists
-  --index INDEX        name of elasticsearch index
-  --template TEMPLATE  name of index template
+  -h, --help     show this help message and exit
+  --override     overrides an existing index, if it already exists
+  --index INDEX  name of elasticsearch index
 ```
 
 ## `logins.py`
