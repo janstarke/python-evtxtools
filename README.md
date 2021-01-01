@@ -2,9 +2,28 @@
 
 Collection of command line tools to correlate windows event logs. This set of tools is aimed to be used at forensic investigations.
 
-## `login.py`
+## `evtx2elasticsearch.py`
 
-Parses `Security.evtx` and correlates logon and logoff events to display a user session timeline.
+Imports Windows event logs (`evtx` files) into an elasticsearch index, using the [Elasticsearch Common Schema](https://www.elastic.co/guide/en/ecs/current/index.html)
+
+### Usage
+
+```
+usage: evtx2elasticsearch.py [-h] logsdir indexname
+
+convert evtx files to an elasticsearch index
+
+positional arguments:
+  logsdir     directory where logs are stored, e.g. %windir%\System32\winevt\Logs
+  indexname   name of elasticsearch index
+
+optional arguments:
+  -h, --help  show this help message and exit
+```
+
+## `logins.py`
+
+Parses `evtx` files and correlates logon and logoff events to display a user session timeline.
 
 ### Usage
 ```
