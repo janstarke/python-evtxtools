@@ -207,19 +207,23 @@ def evtx2elasticsearch(evtx_files: set, index: str, template:str, override: Fals
 
 
 def create_index(index, override):
+    logger = logging.getLogger()
     i = Index(name=index)
     if i.exists():
         if override:
+            logger.warning("deleting index '{index}'".format(index=index))
             i.delete()
         else:
             raise ValueError("index '{index}' exists already, "
                              "you must specify '--override' to override this index".format(index=index))
     assert not i.exists()
+    logger.info("creating index '{index}'".format(index=index))
     i.create()
 
 
 def main():
     logger = logging.getLogger()
+    logging.getLogger("elasticsearch").setLevel(logging.ERROR)
     coloredlogs.install(
         level='INFO',
         logger=logger,
