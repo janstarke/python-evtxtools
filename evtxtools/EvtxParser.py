@@ -57,6 +57,6 @@ class EvtxParser:
             if not self.exclude_event(event):
                 self.handle_event(event)
 
-    def print_logins(self):
+    def print_logins(self, enable_latex = False):
         for s in sorted(self.__activities.values()):
-            print(str(s))
+            print(s.latex_str() if enable_latex else str(s))

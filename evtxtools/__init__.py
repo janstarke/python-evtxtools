@@ -50,6 +50,10 @@ def parse_logins_arguments():
                         dest='include_anonymous',
                         help='also show logins of the anonymous account',
                         action='store_true')
+    parser.add_argument('--latex-output',
+                        dest='latex_output',
+                        help='enable LaTeX output',
+                        action='store_true')
     args = parser.parse_args()
     return args
 

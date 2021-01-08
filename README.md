@@ -44,6 +44,7 @@ optional arguments:
   --include-local-system
                         also show logins of the local system account
   --include-anonymous   also show logins of the anonymous account
+  --latex-output        enable LaTeX output
 ```
 
 ### Example

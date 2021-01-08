@@ -58,6 +58,28 @@ class Activity:
             str(first_event)
         )
 
+    def latex_str(self):
+        if len(self.__events) == 1:
+            event = next(iter(self.__events.values()))
+            return "\\mmsrow{\\ts{%s} & & & %s}" % (
+                event.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                event.latex_str()
+            )
+
+        timestamps = list(sorted(self.__events.keys()))
+        first_event = self.__begin_event or self.__events[timestamps[0]]
+        last_event = self.__end_event or self.__events[timestamps[-1]]
+        td = str(last_event.timestamp - first_event.timestamp)
+        idx = td.find(".")
+        if idx:
+            td = td[:idx]
+        return "\\mmsrow{\\ts{%s} & \\ts{%s} & \\ts{%s} & %s }" % (
+            first_event.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+            last_event.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+            td,
+            first_event.latex_str()
+        )
+
     @property
     def login_time(self):
         return self.__end_timestamp.strftime("%Y-%m-%d %H:%M:%S") if self.__end_timestamp else self.UNKNOWN_TIME

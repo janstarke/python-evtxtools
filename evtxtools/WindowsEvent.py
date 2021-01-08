@@ -116,3 +116,10 @@ class WindowsEvent:
 
     def __str__(self):
         return self.descriptor.description.format_map(WindowsEvent.FriendlyDict(self.event_data))
+
+    def latex_str(self):
+        data = dict()
+        for key, value in self.event_data.items():
+            data[key] = value.replace("\\", "\\\\").replace('"', '\\"') if isinstance(value, str) else value
+        res = self.descriptor.latex_description.format_map(WindowsEvent.FriendlyDict(data))
+        return res.replace("%", "\\%").replace("$", "\\$")
