@@ -7,6 +7,7 @@ from evtxtools.EventDescriptor import EVENT_DESCRIPTORS, EventDescriptor
 from evtxtools.LogSource import LogSource
 
 LOGON_TYPES = {
+    0: "System",
     2: "Interactive",
     3: "Network",
     4: "Batch",
