@@ -45,3 +45,4 @@ class WindowsEvent(Document):
             'level': Integer()
         }
     )
+    json = Text()

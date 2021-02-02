@@ -127,6 +127,9 @@ class SimpleWindowsEvent:
         else:
             return self.__values[path]
 
+    def to_json(self):
+        return orjson.dumps(self.__record).decode("UTF-8")
+
 
 def event_to_dict(filename: str, swe: SimpleWindowsEvent, index: str):
     event = el.WindowsEvent(
@@ -151,7 +154,8 @@ def event_to_dict(filename: str, swe: SimpleWindowsEvent, index: str):
                 'path': filename
             },
             'level': swe.level
-        }
+        },
+        json=swe.to_json()
     )
     return event.to_dict()
 

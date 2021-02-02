@@ -3,9 +3,6 @@ orjson
 progressbar2
 xmltodict
 
-# required by evtx2sqlite.py
-sqlalchemy
-
 # required by evtx2elasticsearch.py
 elasticsearch>=7.0.0
 elasticsearch-dsl>=7.0.0
