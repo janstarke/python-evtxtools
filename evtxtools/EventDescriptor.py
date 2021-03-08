@@ -98,5 +98,9 @@ EVENT_DESCRIPTORS = {
                             latex_description="Started PowerShell command: \\lstinline!{HostApplication}!"),
     403:    EventDescriptor(activity_change=ActivityChange.END_ACTIVITY,
                             log_source=LogSource.Windows_PowerShell,
-                            description="End of PowerShell command")
+                            description="End of PowerShell command"),
+
+    551:    EventDescriptor(activity_change=ActivityChange.NO_ACTIVITY,
+                            log_source=LogSource.Microsoft_Windows_SmbServer_Security,
+                            description="SMB authentication by {ClientName} failed")
 }
