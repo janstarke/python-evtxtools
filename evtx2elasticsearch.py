@@ -192,8 +192,21 @@ def evtx2elasticsearch(evtx_files: set, index: str,  override: False):
 
         parser = PyEvtxParser(str(f))
         items = list()
-        for e in progressbar.progressbar(parser.records_json(), prefix="parsing " + f.name):
-            items.append(e)
+        bar = progressbar.ProgressBar(prefix="parsing " + f.name)
+        iterator = parser.records_json()
+
+        n = 0
+        while True:
+            n += 1
+            bar.update(n)
+            try:
+                e = next(iterator)
+                items.append(e)
+            except StopIteration:
+                break
+            except RuntimeError as e:
+                logging.error(str(e))
+                continue
 
         bar = progressbar.ProgressBar(max_value=len(items), prefix=f.name)
         generator = EventGenerator(
