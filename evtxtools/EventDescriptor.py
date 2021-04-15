@@ -36,7 +36,7 @@ EVENT_DESCRIPTORS = {
     4624: EventDescriptor(
                           activity_change=ActivityChange.START_ACTIVITY,
                           log_source=LogSource.Security,
-                          description="{LogonType} login as {TargetUserName} from {WorkstationName} ({IpAddress})",
+                          description="{LogonType} login as {TargetDomainName}\\{TargetUserName} from {WorkstationName} ({IpAddress})",
                           latex_description="{LogonType} login as \\username{{{TargetUserName}}} "
                                             "from \\host{{{WorkstationName}}} (\\host{{{IpAddress}}})",
                           ),
@@ -44,8 +44,8 @@ EVENT_DESCRIPTORS = {
     # https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4625
     4625: EventDescriptor(activity_change=ActivityChange.NO_ACTIVITY,
                           log_source=LogSource.Security,
-                          description='Account {TargetUserName} failed to log on from {WorkstationName} ({IpAddress})',
-                          latex_description='Account \\username{{{TargetUserName}}} failed to log on from \\host{{{WorkstationName}}} (\\host{{{IpAddress}}})',
+                          description='Account {TargetDomainName}\\{TargetUserName} failed to log on from {WorkstationName} ({IpAddress})',
+                          latex_description='Account \\username{{{TargetDomainName}\\\\{TargetUserName}}} failed to log on from \\host{{{WorkstationName}}} (\\host{{{IpAddress}}})',
                           ),
 
     # https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4634
