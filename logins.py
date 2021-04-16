@@ -36,7 +36,7 @@ def main():
         )
     ))
     evtx_parser = EvtxParser(files_to_scan, sid_filter, args.from_date, args.to_date)
-    evtx_parser.parse_events()
+    evtx_parser.parse_events(hostname=args.hostname)
     evtx_parser.print_logins(enable_latex=args.latex_output)
 
 

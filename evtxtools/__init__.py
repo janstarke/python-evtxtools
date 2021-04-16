@@ -54,6 +54,10 @@ def parse_logins_arguments():
                         dest='latex_output',
                         help='enable LaTeX output',
                         action='store_true')
+    parser.add_argument('--hostname',
+                        dest='hostname',
+                        help='display this value as hostname',
+                        type=str)
     args = parser.parse_args()
     return args
 

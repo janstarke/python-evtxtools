@@ -44,18 +44,18 @@ class EvtxParser:
 
         return False
 
-    def handle_event(self, event: WindowsEvent):
+    def handle_event(self, event: WindowsEvent, hostname: str):
         activity = self.__activities.get(event.activity_id)
         if activity is None:
-            activity = Activity()
+            activity = Activity(hostname)
             self.__activities[event.activity_id] = activity
         activity.add_event(event)
 
-    def parse_events(self):
+    def parse_events(self, hostname: str = None):
         event_list = RawEventList(self.__files_to_scan, set(EVENT_DESCRIPTORS.keys()), self.__from_date, self.__to_date)
         for event in progressbar.progressbar(event_list):
             if not self.exclude_event(event):
-                self.handle_event(event)
+                self.handle_event(event, hostname)
 
     def print_logins(self, enable_latex = False):
         for s in sorted(self.__activities.values()):

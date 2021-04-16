@@ -12,11 +12,12 @@ class Activity:
     UNKNOWN_TIME = "????-??-?? ??:??:??"
     NO_TIME      = "                   "
 
-    def __init__(self):
+    def __init__(self, hostname: str):
         self.__begin_event = None
         self.__end_event = None
         self.__events = dict()
         self.__activity_id = None
+        self.__hostname = hostname
 
     def add_event(self, event: WindowsEvent):
         self.__events[event.timestamp] = event
@@ -41,21 +42,29 @@ class Activity:
         return self.__end_timestamp is not None
 
     def __str__(self):
+        if self.__hostname:
+            hostname = " {" + self.__hostname + "}"
+        else:
+            hostname = ""
+
         if len(self.__events) == 1:
             event = next(iter(self.__events.values()))
-            return "%s: %s" % (
+            return "%s%s: %s" % (
                 event.timestamp,
+                hostname,
                 str(event)
             )
+
 
         timestamps = list(sorted(self.__events.keys()))
         first_event = self.__begin_event or self.__events[timestamps[0]]
         last_event = self.__end_event or self.__events[timestamps[-1]]
-        return "%s - %s (%s): %s" % (
+        return "%s%s: %s (ended %s (%s))" % (
             first_event.timestamp,
+            hostname,
+            str(first_event),
             last_event.timestamp,
-            last_event.timestamp - first_event.timestamp,
-            str(first_event)
+            last_event.timestamp - first_event.timestamp
         )
 
     def latex_str(self):
