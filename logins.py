@@ -29,6 +29,9 @@ def main():
     if args.include_anonymous:
         sid_filter.include_anonymous()
 
+    # list all files of the given directory which we can use:
+    # - files must be regular files (no directories, etc.)
+    # - file names must be listed in EvtxParser.KNWON_FILES
     files_to_scan = list(filter(
         lambda f: f.is_file(), map(
             lambda sf: args.logsdir / sf,
