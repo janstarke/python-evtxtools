@@ -59,8 +59,8 @@ EVENT_DESCRIPTORS = {
                           log_source=LogSource.Security),
 
     # https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4648
-    4648: EventDescriptor(description="{SubjectUserName} attempted to run {ProcessName} as {TargetUserName}",
-                            latex_description="\\username{{{SubjectUserName}}} attempted to run \\lstinline!{ProcessName}! as \\username{{{TargetUserName}}}",
+    4648: EventDescriptor(description="{SubjectDomainName}\\{SubjectUserName} attempted to login as {TargetDomainName}\\{TargetUserName} using {ProcessName}",
+                            latex_description="\\username{{{SubjectDomainName}$\\textbackslash${SubjectUserName}}} attempted to login as \\username{{{TargetDomainName}$\\textbackslash${TargetUserName}}} using \\lstinline!{ProcessName}!",
                           log_source=LogSource.Security,
                           activity_change=ActivityChange.NO_ACTIVITY),
 
